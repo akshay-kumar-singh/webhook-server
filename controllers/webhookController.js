@@ -339,25 +339,32 @@ exports.getStreakData = async (req, res) => {
     const allDates = activeDates.map((d) => new Date(d)).sort((a, b) => a - b);
 
     const getUTCDateString = (date) =>
-      new Date(
-        Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
-      )
+      new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
         .toISOString()
         .split("T")[0];
 
+    const today = new Date();
+    const todayStr = getUTCDateString(today);
+
+    const yesterday = new Date(today);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    const yesterdayStr = getUTCDateString(yesterday);
+
     let currentStreak = 0;
-    let today = new Date();
-    today = new Date(
-      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
-    );
+    let tempDate = new Date(today);
 
     while (true) {
-      const dateStr = getUTCDateString(today);
+      const dateStr = getUTCDateString(tempDate);
       if (activeSet.has(dateStr)) {
         currentStreak++;
-        today.setUTCDate(today.getUTCDate() - 1);
+        tempDate.setUTCDate(tempDate.getUTCDate() - 1);
       } else {
-        break;
+        if (dateStr === todayStr && activeSet.has(yesterdayStr)) {
+          tempDate.setUTCDate(tempDate.getUTCDate() - 1);
+          continue;
+        } else {
+          break;
+        }
       }
     }
 
