@@ -124,9 +124,8 @@ async function processPullRequestEvent(event, repoFullName) {
 
 exports.getEvents = async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20;
-    const events = await Event.find({}).sort({ timestamp: -1 }).limit(limit);
-
+    const events = await Event.find({}).sort({ timestamp: -1 }); // No limit
+    
     res.status(200).json(
       events.map((event) => ({
         ...event._doc,
