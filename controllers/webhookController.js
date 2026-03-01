@@ -86,7 +86,7 @@ async function processPushEvent(event, repoFullName) {
         commit.id
       );
       totalChanged +=
-        (commitData.stats?.additions || 0) + (commitData.stats?.deletions || 0);
+        (commitData.stats?.additions || 0) - (commitData.stats?.deletions || 0);
     } catch (err) {
       console.warn(
         `⚠️ Could not fetch stats for commit ${commit.id}:`,
@@ -113,7 +113,7 @@ async function processPullRequestEvent(event, repoFullName) {
       event.pull_request.number
     );
     totalChanged = files.reduce((sum, file) => {
-      return sum + (file.additions || 0) + (file.deletions || 0);
+      return sum + (file.additions || 0) - (file.deletions || 0);
     }, 0);
   } catch (err) {
     console.warn(`⚠️ Could not fetch PR files:`, err.message);
