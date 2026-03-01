@@ -124,14 +124,44 @@ async function processPullRequestEvent(event, repoFullName) {
 
 exports.getEvents = async (req, res) => {
   try {
-    const events = await Event.find({}).sort({ timestamp: -1 }); // No limit
-    
-    res.status(200).json(
-      events.map((event) => ({
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 8;
+    const skip = (page - 1) * limit;
+
+    const query = {};
+
+    if (req.query.repo) {
+      // Allow partial match on repo name if needed, but exact match is usually sent by filter
+      query.repo = new RegExp(req.query.repo, 'i');
+    }
+
+    if (req.query.action) {
+      query.action = req.query.action;
+    }
+
+    if (req.query.search) {
+      const searchRegex = new RegExp(req.query.search, 'i');
+      query.$or = [
+        { repo: searchRegex },
+        { commit_messages: { $elemMatch: { $regex: searchRegex } } }
+      ];
+    }
+
+    const totalEvents = await Event.countDocuments(query);
+    const events = await Event.find(query)
+      .sort({ timestamp: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.status(200).json({
+      events: events.map((event) => ({
         ...event._doc,
         formatted: formatDate(event),
-      }))
-    );
+      })),
+      currentPage: page,
+      totalPages: Math.ceil(totalEvents / limit),
+      totalEvents
+    });
   } catch (err) {
     console.error("❌ Error fetching events:", err);
     res.status(500).json({ message: "Internal server error" });
